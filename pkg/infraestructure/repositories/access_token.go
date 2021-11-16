@@ -85,9 +85,8 @@ func (r *accessTokenRepository) LoginUser(email string, password string) (*domai
 	}
 	defer response.Body.Close()
 
-	bodyBytes, _ := io.ReadAll(response.Body)
-
 	if response.StatusCode > 299 {
+		bodyBytes, _ := io.ReadAll(response.Body)
 		restErr, err := rest_errors.NewRestErrorFromBytes(bodyBytes)
 		if err != nil {
 			return nil, rest_errors.NewInternalServerError("invalid restclient response")
@@ -96,7 +95,7 @@ func (r *accessTokenRepository) LoginUser(email string, password string) (*domai
 	}
 
 	var user domain.User
-	if err := json.Unmarshal(bodyBytes, &user); err != nil {
+	if err := json.NewDecoder(response.Body).Decode(&user); err != nil {
 		return nil, rest_errors.NewInternalServerError("error when trying to unmarshal users response")
 	}
 	return &user, nil
