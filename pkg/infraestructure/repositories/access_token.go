@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,11 +11,10 @@ import (
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/domain"
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/ports"
 	"github.com/FacuBar/bookstore_utils-go/rest_errors"
-	"github.com/gocql/gocql"
 )
 
 type accessTokenRepository struct {
-	db   *gocql.Session
+	db   *sql.DB
 	rest *http.Client
 }
 
@@ -23,7 +23,7 @@ var (
 	instanceTokenRepo *accessTokenRepository
 )
 
-func NewAccessTokenRepository(db *gocql.Session, rest *http.Client) ports.AccessTokenRepository {
+func NewAccessTokenRepository(db *sql.DB, rest *http.Client) ports.AccessTokenRepository {
 	onceTokenRepo.Do(func() {
 		instanceTokenRepo = &accessTokenRepository{
 			db:   db,
@@ -37,34 +37,41 @@ func NewAccessTokenRepository(db *gocql.Session, rest *http.Client) ports.Access
 const (
 	queryGetAccessToken    = "SELECT access_token, user_id, expires FROM access_tokens WHERE access_token=?;"
 	queryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id,  expires) VALUES (?, ?, ?)"
+	queryDeleteAccessToken = "DELETE FROM access_tokens WHERE user_id=?"
 	queryUpdateExpires     = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
 )
 
 func (r *accessTokenRepository) Create(at domain.AccessToken) rest_errors.RestErr {
-	if err := r.db.Query(queryCreateAccessToken,
-		at.AccessToken,
-		at.UserId,
-		at.Expires,
-	).Exec(); err != nil {
+	if _, err := r.db.Exec(queryDeleteAccessToken, at.UserId); err != nil {
 		return rest_errors.NewInternalServerError(err.Error())
 	}
+
+	stmt, err := r.db.Prepare(queryCreateAccessToken)
+	if err != nil {
+		return rest_errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(at.AccessToken, at.UserId, at.Expires); err != nil {
+		return rest_errors.NewInternalServerError(err.Error())
+	}
+
 	return nil
 }
 
 func (r *accessTokenRepository) GetById(Id string) (*domain.AccessToken, rest_errors.RestErr) {
-	var result domain.AccessToken
-	if err := r.db.Query(queryGetAccessToken, Id).Scan(
-		&result.AccessToken,
-		&result.UserId,
-		&result.Expires,
-	); err != nil {
-		if err == gocql.ErrNotFound {
-			return nil, rest_errors.NewNotFoundError("no access token")
-		}
+	var at domain.AccessToken
+	stmt, err := r.db.Prepare(queryGetAccessToken)
+	if err != nil {
 		return nil, rest_errors.NewInternalServerError(err.Error())
 	}
 
-	return &result, nil
+	result := stmt.QueryRow(Id)
+	if err := result.Scan(&at.AccessToken, &at.UserId, &at.Expires); err != nil {
+		return nil, rest_errors.NewInternalServerError(err.Error())
+	}
+
+	return &at, nil
 }
 
 func (r *accessTokenRepository) LoginUser(email string, password string) (*domain.User, rest_errors.RestErr) {
