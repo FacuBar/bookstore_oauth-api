@@ -6,7 +6,7 @@ import (
 )
 
 type AcessTokenService interface {
-	Create(domain.User) (*domain.AccessToken, rest_errors.RestErr)
+	Create(string, string) (*domain.AccessToken, rest_errors.RestErr)
 	GetById(string) (*domain.AccessToken, rest_errors.RestErr)
 	// UpdateExpirationTime ()
 }

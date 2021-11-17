@@ -8,6 +8,7 @@ import (
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/domain"
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/ports"
 	"github.com/FacuBar/bookstore_utils-go/rest_errors"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -33,19 +34,20 @@ const (
 	expirationTime = 48
 )
 
-func (s *accessTokenService) Create(request domain.User) (*domain.AccessToken, rest_errors.RestErr) {
-	if strings.TrimSpace(request.Email) == "" || strings.TrimSpace(request.Password) == "" {
+func (s *accessTokenService) Create(email string, password string) (*domain.AccessToken, rest_errors.RestErr) {
+	if strings.TrimSpace(email) == "" || strings.TrimSpace(password) == "" {
 		return nil, rest_errors.NewBadRequestError("not valid credentials")
 	}
 
-	user, err := s.repo.LoginUser(request.Email, request.Password)
+	user, err := s.repo.LoginUser(email, password)
 	if err != nil {
 		return nil, err
 	}
 
 	accestToken := domain.AccessToken{
-		UserId:  user.Id,
-		Expires: time.Now().UTC().Add(expirationTime * time.Hour).Unix(),
+		UserId:      user.Id,
+		Expires:     time.Now().UTC().Add(expirationTime * time.Hour).Unix(),
+		AccessToken: uuid.NewV4().String(),
 	}
 
 	if err := s.repo.Create(accestToken); err != nil {
