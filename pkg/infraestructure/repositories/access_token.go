@@ -35,10 +35,10 @@ func NewAccessTokenRepository(db *sql.DB, rest *http.Client) ports.AccessTokenRe
 }
 
 const (
-	queryGetAccessToken    = "SELECT access_token, user_id, expires FROM access_tokens WHERE access_token=?;"
-	queryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id,  expires) VALUES (?, ?, ?)"
+	queryGetAccessToken    = "SELECT access_token, user_id, user_role, expires FROM access_tokens WHERE access_token=?;"
+	queryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id, user_role, expires) VALUES (?, ?, ?, ?)"
 	queryDeleteAccessToken = "DELETE FROM access_tokens WHERE user_id=?"
-	queryUpdateExpires     = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
+	// queryUpdateExpires     = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
 )
 
 func (r *accessTokenRepository) Create(at domain.AccessToken) rest_errors.RestErr {
@@ -52,7 +52,7 @@ func (r *accessTokenRepository) Create(at domain.AccessToken) rest_errors.RestEr
 	}
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(at.AccessToken, at.UserId, at.Expires); err != nil {
+	if _, err := stmt.Exec(at.AccessToken, at.UserId, at.UserRole, at.Expires); err != nil {
 		return rest_errors.NewInternalServerError(err.Error())
 	}
 
@@ -67,7 +67,7 @@ func (r *accessTokenRepository) GetById(Id string) (*domain.AccessToken, rest_er
 	}
 
 	result := stmt.QueryRow(Id)
-	if err := result.Scan(&at.AccessToken, &at.UserId, &at.Expires); err != nil {
+	if err := result.Scan(&at.AccessToken, &at.UserId, &at.UserRole, &at.Expires); err != nil {
 		return nil, rest_errors.NewInternalServerError(err.Error())
 	}
 

@@ -17,8 +17,14 @@ func Handler(ats ports.AcessTokenService) *gin.Engine {
 	return router
 }
 
+const (
+	grantTypePassword = "password"
+)
+
 func createAccessToken(s ports.AcessTokenService) func(c *gin.Context) {
 	type request struct {
+		GrantType string `json:"grant_type"`
+
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
@@ -27,6 +33,12 @@ func createAccessToken(s ports.AcessTokenService) func(c *gin.Context) {
 		var loginRequest request
 		if err := c.ShouldBindJSON(&loginRequest); err != nil {
 			restErr := rest_errors.NewBadRequestError("invalid request")
+			c.JSON(restErr.Status(), restErr)
+			return
+		}
+
+		if loginRequest.GrantType != grantTypePassword {
+			restErr := rest_errors.NewBadRequestError("grant_type not supported")
 			c.JSON(restErr.Status(), restErr)
 			return
 		}
