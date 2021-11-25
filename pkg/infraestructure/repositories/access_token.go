@@ -36,14 +36,19 @@ func NewAccessTokenRepository(db *sql.DB, rest *http.Client) ports.AccessTokenRe
 }
 
 const (
-	queryGetAccessToken    = "SELECT access_token, user_id, user_role, expires FROM access_tokens WHERE access_token=?;"
+	queryGetAccessToken = "SELECT access_token, user_id, user_role, expires FROM access_tokens WHERE access_token=?;"
+
 	queryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id, user_role, expires) VALUES (?, ?, ?, ?)"
-	queryDeleteAccessToken = "DELETE FROM access_tokens WHERE user_id=?"
+
+	queryDeleteAccessToken = "DELETE FROM access_tokens WHERE access_token=?"
+
+	queryDeleteAccessTokenByUser = "DELETE FROM access_tokens WHERE user_id=?"
+
 	// queryUpdateExpires     = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
 )
 
 func (r *accessTokenRepository) Create(at domain.AccessToken) rest_errors.RestErr {
-	if _, err := r.db.Exec(queryDeleteAccessToken, at.UserId); err != nil {
+	if _, err := r.db.Exec(queryDeleteAccessTokenByUser, at.UserId); err != nil {
 		return rest_errors.NewInternalServerError(err.Error())
 	}
 
@@ -110,4 +115,18 @@ func (r *accessTokenRepository) LoginUser(email string, password string) (*domai
 		return nil, rest_errors.NewInternalServerError("error when trying to unmarshal users response")
 	}
 	return &user, nil
+}
+
+func (r *accessTokenRepository) DeleteById(id string) rest_errors.RestErr {
+	stmt, err := r.db.Prepare(queryDeleteAccessToken)
+	if err != nil {
+		return rest_errors.NewNotFoundError(err.Error())
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(id); err != nil {
+		return rest_errors.NewInternalServerError(err.Error())
+	}
+
+	return nil
 }

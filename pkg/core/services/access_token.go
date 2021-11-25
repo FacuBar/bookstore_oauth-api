@@ -68,5 +68,10 @@ func (s *accessTokenService) GetById(id string) (*domain.AccessToken, rest_error
 	if err != nil {
 		return nil, err
 	}
+
+	if time.Now().After(time.Unix(accessToken.Expires, 0)) {
+		return nil, rest_errors.NewUnauthorizedError("Token expired")
+	}
+
 	return accessToken, nil
 }
