@@ -49,7 +49,6 @@ func (s *accessTokenService) Create(email string, password string) (*domain.Acce
 		UserRole:    user.Role,
 		Expires:     time.Now().UTC().Add(expirationTime * time.Hour).Unix(),
 		AccessToken: uuid.NewV4().String(),
-		TokenType:   "Bearer",
 	}
 
 	if err := s.repo.Create(accestToken); err != nil {
