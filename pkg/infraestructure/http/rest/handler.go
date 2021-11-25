@@ -21,7 +21,7 @@ const (
 	grantTypePassword = "password"
 )
 
-func createAccessToken(s ports.AcessTokenService) func(c *gin.Context) {
+func createAccessToken(s ports.AcessTokenService) gin.HandlerFunc {
 	type request struct {
 		GrantType string `json:"grant_type"`
 
@@ -52,7 +52,7 @@ func createAccessToken(s ports.AcessTokenService) func(c *gin.Context) {
 	}
 }
 
-func getAccessToken(s ports.AcessTokenService) func(c *gin.Context) {
+func getAccessToken(s ports.AcessTokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenId := c.Param("access_token_id")
 

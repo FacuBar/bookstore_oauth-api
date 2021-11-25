@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/domain"
@@ -68,6 +69,9 @@ func (r *accessTokenRepository) GetById(Id string) (*domain.AccessToken, rest_er
 
 	result := stmt.QueryRow(Id)
 	if err := result.Scan(&at.AccessToken, &at.UserId, &at.UserRole, &at.Expires); err != nil {
+		if strings.Contains(err.Error(), "no rows") {
+			return nil, rest_errors.NewNotFoundError("access_token not found")
+		}
 		return nil, rest_errors.NewInternalServerError(err.Error())
 	}
 
