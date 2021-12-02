@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/services"
 	"github.com/FacuBar/bookstore_oauth-api/pkg/infraestructure/clients"
@@ -22,5 +27,35 @@ func main() {
 	ats := services.NewAccessTokenService(atr)
 
 	router := rest.Handler(ats)
-	router.Run(":8081")
+	srv := http.Server{
+		Handler: router,
+		Addr:    ":8081",
+	}
+
+	go func() {
+		if err = srv.ListenAndServe(); err != nil {
+			log.Fatalf("Error while serving", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+
+	<-quit
+	log.Println("Shutdown server ...")
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		5*time.Second)
+
+	defer cancel()
+
+	db.Close()
+
+	go func() {
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Fatal("Server Shutdown:", err)
+		}
+	}()
+
+	log.Print("Server exiting")
 }
