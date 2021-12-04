@@ -10,6 +10,7 @@ import (
 
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/services"
 	"github.com/FacuBar/bookstore_oauth-api/pkg/infraestructure/clients"
+	oauth_grpc "github.com/FacuBar/bookstore_oauth-api/pkg/infraestructure/http/grpc/oauth"
 	"github.com/FacuBar/bookstore_oauth-api/pkg/infraestructure/http/rest"
 	"github.com/FacuBar/bookstore_oauth-api/pkg/infraestructure/repositories"
 	"github.com/joho/godotenv"
@@ -22,6 +23,7 @@ func main() {
 	}
 
 	db := clients.ConnectDB()
+	defer db.Close()
 
 	atr := repositories.NewAccessTokenRepository(db, &http.Client{})
 	ats := services.NewAccessTokenService(atr)
@@ -34,9 +36,14 @@ func main() {
 
 	go func() {
 		if err = srv.ListenAndServe(); err != nil {
-			log.Fatalf("Error while serving", err)
+			log.Fatalf("Error while serving: %v", err)
 		}
 	}()
+
+	OauthGrpcServer, err := oauth_grpc.NewGRPCServer("0.0.0.0:10000", ats)
+	if err != nil {
+		log.Fatalf("couldn't serve grpc server, err: %v", err)
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
@@ -46,11 +53,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		5*time.Second)
-
 	defer cancel()
 
-	db.Close()
-
+	go OauthGrpcServer.GracefulStop()
 	go func() {
 		if err := srv.Shutdown(ctx); err != nil {
 			log.Fatal("Server Shutdown:", err)
