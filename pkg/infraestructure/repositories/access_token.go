@@ -40,10 +40,9 @@ const (
 
 	queryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id, user_role, expires) VALUES (?, ?, ?, ?)"
 
-	queryDeleteAccessToken = "DELETE FROM access_tokens WHERE access_token=?"
-
 	queryDeleteAccessTokenByUser = "DELETE FROM access_tokens WHERE user_id=?"
 
+	// queryDeleteAccessToken = "DELETE FROM access_tokens WHERE access_token=?"
 	// queryUpdateExpires     = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
 )
 
@@ -117,16 +116,16 @@ func (r *accessTokenRepository) LoginUser(email string, password string) (*domai
 	return &user, nil
 }
 
-func (r *accessTokenRepository) DeleteById(id string) rest_errors.RestErr {
-	stmt, err := r.db.Prepare(queryDeleteAccessToken)
-	if err != nil {
-		return rest_errors.NewNotFoundError(err.Error())
-	}
-	defer stmt.Close()
+// func (r *accessTokenRepository) DeleteById(id string) rest_errors.RestErr {
+// 	stmt, err := r.db.Prepare(queryDeleteAccessToken)
+// 	if err != nil {
+// 		return rest_errors.NewNotFoundError(err.Error())
+// 	}
+// 	defer stmt.Close()
 
-	if _, err := stmt.Exec(id); err != nil {
-		return rest_errors.NewInternalServerError(err.Error())
-	}
+// 	if _, err := stmt.Exec(id); err != nil {
+// 		return rest_errors.NewInternalServerError(err.Error())
+// 	}
 
-	return nil
-}
+// 	return nil
+// }

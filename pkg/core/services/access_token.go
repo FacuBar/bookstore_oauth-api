@@ -64,6 +64,7 @@ func (s *accessTokenService) GetById(id string) (*domain.AccessToken, rest_error
 	if len(id) == 0 {
 		return nil, rest_errors.NewBadRequestError("invalid access token id")
 	}
+
 	accessToken, err := s.repo.GetById(id)
 	if err != nil {
 		return nil, err

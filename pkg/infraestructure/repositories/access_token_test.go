@@ -118,6 +118,18 @@ func TestGetById(t *testing.T) {
 		assert.Nil(t, at)
 		assert.NotNil(t, err)
 	})
+
+	t.Run("ErrorNoRows", func(t *testing.T) {
+		db, mock := NewMock()
+		mock.ExpectPrepare(query).ExpectQuery().WillReturnError(sql.ErrNoRows)
+
+		atRepo := accessTokenRepository{db: db, rest: nil}
+		at, err := atRepo.GetById("084a4a0f-92cc-46e6-9b57-1d2aed3c389e")
+
+		assert.Nil(t, at)
+		assert.NotNil(t, err)
+		assert.EqualValues(t, "access_token not found", err.Message())
+	})
 }
 
 func TestLoginUser(t *testing.T) {
@@ -221,3 +233,15 @@ func TestLoginUser(t *testing.T) {
 		assert.EqualValues(t, "error when trying to unmarshal users response", err.Message())
 	})
 }
+
+// func TestDeleteById(t testing.T) {
+// 	query := regexp.QuoteMeta(queryDeleteAccessToken)
+// 	db, mock := NewMock()
+// 		mock.ExpectPrepare(query).WillReturnError(errors.New(""))
+
+// 		atRepo := accessTokenRepository{db: db, rest: nil}
+// 		at, err := atRepo.GetById("084a4a0f-92cc-46e6-9b57-1d2aed3c389e")
+
+// 		assert.Nil(t, at)
+// 		assert.NotNil(t, err)
+// }
