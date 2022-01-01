@@ -17,13 +17,15 @@ var (
 )
 
 type accessTokenService struct {
-	repo ports.AccessTokenRepository
+	repo     ports.AccessTokenRepository
+	uservice ports.UsersService
 }
 
-func NewAccessTokenService(repo ports.AccessTokenRepository) ports.AcessTokenService {
+func NewAccessTokenService(repo ports.AccessTokenRepository, servc ports.UsersService) ports.AcessTokenService {
 	onceTokenService.Do(func() {
 		instanceTokenService = &accessTokenService{
-			repo: repo,
+			repo:     repo,
+			uservice: servc,
 		}
 	})
 
@@ -39,9 +41,20 @@ func (s *accessTokenService) Create(email string, password string) (*domain.Acce
 		return nil, rest_errors.NewBadRequestError("not valid credentials")
 	}
 
-	user, err := s.repo.LoginUser(email, password)
+	var user *domain.User
+	var err rest_errors.RestErr
+
+	user, err = s.uservice.Login(email, password)
 	if err != nil {
-		return nil, err
+		if err.Message() != "user not registered" {
+			return nil, err
+		}
+		// in case replication of user is delayed, a call
+		// to the users microservice is done
+		user, err = s.repo.LoginUser(email, password)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	accestToken := domain.AccessToken{
