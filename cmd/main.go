@@ -25,8 +25,11 @@ func main() {
 	db := clients.ConnectDB()
 	defer db.Close()
 
+	ur := repositories.NewUsersRepository(db)
+	us := services.NewUsersService(ur)
+
 	atr := repositories.NewAccessTokenRepository(db, &http.Client{})
-	ats := services.NewAccessTokenService(atr)
+	ats := services.NewAccessTokenService(atr, us)
 
 	router := rest.Handler(ats)
 	srv := http.Server{
