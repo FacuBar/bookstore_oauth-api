@@ -8,3 +8,10 @@ CREATE TABLE `access_tokens` (
 CREATE INDEX `access_tokens_index_0` ON `access_tokens` (`access_token`);
 
 CREATE INDEX `access_tokens_index_1` ON `access_tokens` (`user_id`);
+
+CREATE TABLE `users` (
+  `id` bigint NOT NULL PRIMARY KEY,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL, 
+  `role` varchar(255) NOT NULL
+)
