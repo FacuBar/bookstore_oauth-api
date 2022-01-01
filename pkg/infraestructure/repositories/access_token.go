@@ -82,7 +82,7 @@ func (r *accessTokenRepository) GetById(Id string) (*domain.AccessToken, rest_er
 	return &at, nil
 }
 
-func (r *accessTokenRepository) LoginUser(email string, password string) (*domain.User, rest_errors.RestErr) {
+func (r *accessTokenRepository) LoginUser(email, password string) (*domain.User, rest_errors.RestErr) {
 	request := struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
