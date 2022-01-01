@@ -34,6 +34,11 @@ func main() {
 		Addr:    ":8081",
 	}
 
+	_, err = clients.NewRabbitMQ(os.Getenv("RMQ_URI"))
+	if err != nil {
+		log.Fatalf("rabitmq error: %v\n", err)
+	}
+
 	go func() {
 		if err = srv.ListenAndServe(); err != nil {
 			log.Fatalf("Error while serving: %v", err)
