@@ -37,7 +37,7 @@ func main() {
 		Addr:    ":8081",
 	}
 
-	_, err = clients.NewRabbitMQ(os.Getenv("RMQ_URI"))
+	_, err = clients.NewRabbitMQ(os.Getenv("RMQ_URI"), ur)
 	if err != nil {
 		log.Fatalf("rabitmq error: %v\n", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/FacuBar/bookstore_oauth-api/pkg/core/domain"
+	"github.com/FacuBar/bookstore_oauth-api/pkg/core/ports"
 	"github.com/streadway/amqp"
 )
 
@@ -14,7 +15,7 @@ type RabbitMQ struct {
 	Channel    *amqp.Channel
 }
 
-func NewRabbitMQ(url string) (*RabbitMQ, error) {
+func NewRabbitMQ(url string, userS ports.UsersRepository) (*RabbitMQ, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, err
@@ -66,7 +67,7 @@ func NewRabbitMQ(url string) (*RabbitMQ, error) {
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		true,   // auto ack
+		false,  // auto ack
 		false,  // exclusive
 		false,  // no local
 		false,  // no wait
@@ -83,9 +84,19 @@ func NewRabbitMQ(url string) (*RabbitMQ, error) {
 			var user domain.User
 
 			gob.NewDecoder(reader).Decode(&user)
-			// TODO: implement all the user login related to user and wire it up with
-			// 			the received messages
+
 			fmt.Printf("message received: %v\nwith routing key: %v\n", user, d.RoutingKey)
+			switch d.RoutingKey {
+			case "users.event.register":
+				err := userS.Save(&user)
+				if err == nil {
+					d.Ack(false)
+				}
+			case "users.event.update":
+				fmt.Printf("%v to be implemented", d.RoutingKey)
+			case "users.event.delete":
+				fmt.Printf("%v to be implemented", d.RoutingKey)
+			}
 		}
 	}()
 
