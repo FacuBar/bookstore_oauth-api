@@ -34,7 +34,7 @@ func main() {
 	router := rest.Handler(ats)
 	srv := http.Server{
 		Handler: router,
-		Addr:    ":8081",
+		Addr:    os.Getenv("PORT"),
 	}
 
 	_, err = clients.NewRabbitMQ(os.Getenv("RMQ_URI"), ur)
@@ -48,7 +48,7 @@ func main() {
 		}
 	}()
 
-	OauthGrpcServer, err := oauth_grpc.NewGRPCServer("0.0.0.0:10000", ats)
+	OauthGrpcServer, err := oauth_grpc.NewGRPCServer(os.Getenv("GRPC_SERVER"), ats)
 	if err != nil {
 		log.Fatalf("couldn't serve grpc server, err: %v", err)
 	}
